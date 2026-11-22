@@ -2,9 +2,9 @@
   "verzija": 1,
   "opis": "Pravila prema Kolektivnom ugovoru HEP-a. Povećanje vrijednosti boda 6 % od 1.1.2027.",
   "aplikacija": {
-    "verzija": "3.9",
+    "verzija": "3.10",
     "link": "https://github.com/vedransalopek0-afk/hepnime-pravila/releases/latest/download/HEPniME-placa.apk",
-    "novo": "Tamni način, kartica sljedeće isplate, donja traka s ikonama i ispravci grešaka."
+    "novo": "Nova verzija 3.10 – dodirni Preuzmi pa Ažuriraj. Podaci ostaju."
   },
   "vrijednostBoda": 1.68988,
   "povecanja": [
