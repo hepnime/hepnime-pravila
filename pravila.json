@@ -1,0 +1,13 @@
+{
+  "verzija": 2,
+  "opis": "Aplikacija za plaću",
+  "aplikacija": {
+    "verzija": "3.12",
+    "link": "https://github.com/hepnime/hepnime-pravila/releases/latest/download/HEPniME-placa.apk",
+    "novo": "Gumb za anonimni prijedlog poboljšanja i udio olakšice za dijete u koracima po 0,01."
+  },
+  "prijedlozi": {
+    "url": "https://docs.google.com/forms/d/e/1FAIpQLSdSTRhACIgrXmUZXfUKFaI6PcHguCYKUlmaVg49PMmHXhRtVw/formResponse",
+    "polje": "entry.908792500"
+  }
+}
