@@ -1,0 +1,111 @@
+# Objavljivanje bez imena autora: releasee i commitove radi github-actions[bot].
+# Pokreće se lokalno skriptom GitHub\objavi.ps1, koja datoteke najprije stavi
+# u skriveni (draft) release "priprema", a ovaj ih workflow odande preuzme.
+name: Objavi
+
+on:
+  workflow_dispatch:
+    inputs:
+      verzija:
+        description: "Verzija aplikacije (npr. 3.12); prazno = samo pravila.json"
+        required: false
+        default: ""
+      zamijeni:
+        description: "Zamijeni postojeći release iste verzije"
+        type: boolean
+        default: false
+      ocisti_povijest:
+        description: "Zamijeni povijest repozitorija jednim commitom (jednokratno)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 3 * * *"   # svaki dan briše stare zapise pokretanja
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency: objavi
+
+jobs:
+  objavi:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VER: ${{ inputs.verzija }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Git identitet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Preuzmi pripremljene datoteke
+        run: |
+          mkdir -p /tmp/p
+          ID=$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '[.[] | select(.draft and .name=="priprema")][0].id // empty')
+          echo "DRAFT_ID=$ID" >> "$GITHUB_ENV"
+          if [ -n "$ID" ]; then
+            gh api "repos/$GH_REPO/releases/$ID/assets" --jq '.[] | "\(.id) \(.name)"' | while read -r AID NAME; do
+              gh api -H "Accept: application/octet-stream" "repos/$GH_REPO/releases/assets/$AID" > "/tmp/p/$NAME"
+            done
+          fi
+          ls -la /tmp/p
+
+      - name: Nova verzija aplikacije
+        if: inputs.verzija != ''
+        run: |
+          [[ "$VER" =~ ^[0-9]+(\.[0-9]+)*$ ]] || { echo "Neispravna verzija: $VER"; exit 1; }
+          test -s /tmp/p/HEPniME-placa.apk || { echo "Nema HEPniME-placa.apk u pripremi"; exit 1; }
+          [ -s /tmp/p/opis.md ] || echo "HEPni ME! – kalkulator plaće, verzija $VER" > /tmp/p/opis.md
+          if gh release view "v$VER" >/dev/null 2>&1; then
+            if [ "${{ inputs.zamijeni }}" = "true" ]; then
+              gh release delete "v$VER" --yes --cleanup-tag
+            else
+              echo "Release v$VER već postoji"; exit 1
+            fi
+          fi
+          gh release create "v$VER" /tmp/p/HEPniME-placa.apk \
+            --title "HEPni ME! $VER" --notes-file /tmp/p/opis.md --latest --target main
+
+      - name: pravila.json
+        run: |
+          if [ -f /tmp/p/pravila.json ]; then
+            jq . /tmp/p/pravila.json > /dev/null
+            cp /tmp/p/pravila.json pravila.json
+            git add pravila.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Ažurirana pravila"
+              git push origin HEAD:main
+            fi
+          fi
+
+      - name: Očisti povijest
+        if: inputs.ocisti_povijest
+        run: |
+          git checkout --orphan nova
+          git commit -m "HEPni ME! pravila"
+          git push --force origin nova:main
+
+      - name: Obriši pripremu
+        if: always() && env.DRAFT_ID != ''
+        run: gh api -X DELETE "repos/$GH_REPO/releases/$DRAFT_ID"
+
+  pocisti:
+    needs: [objavi]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Obriši stare zapise pokretanja
+        run: |
+          gh api --paginate "repos/$GH_REPO/actions/runs?per_page=100" \
+            --jq '.workflow_runs[] | select(.id != ${{ github.run_id }}) | .id' |
+          while read -r R; do gh api -X DELETE "repos/$GH_REPO/actions/runs/$R" || true; done
