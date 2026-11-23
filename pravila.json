@@ -2,9 +2,9 @@
   "verzija": 2,
   "opis": "Aplikacija za plaću",
   "aplikacija": {
-    "verzija": "3.10",
+    "verzija": "3.11",
     "link": "https://github.com/vedransalopek0-afk/hepnime-pravila/releases/latest/download/HEPniME-placa.apk",
-    "novo": "Nova verzija 3.10 – dodirni Preuzmi pa Ažuriraj. Podaci ostaju."
+    "novo": "Gumb za anonimni prijedlog poboljšanja i udio olakšice za dijete u koracima po 0,01."
   },
   "prijedlozi": {
     "url": "https://docs.google.com/forms/d/e/1FAIpQLSdSTRhACIgrXmUZXfUKFaI6PcHguCYKUlmaVg49PMmHXhRtVw/formResponse",
